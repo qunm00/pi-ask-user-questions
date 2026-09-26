@@ -1,4 +1,4 @@
-# pi-ask-user
+# pi-ask-user-questions
 
 Let the agent **ask you a question and type the answer**. No multiple choice, no option
 lists — just a question and a place to type. When the agent has several questions, you
@@ -11,13 +11,13 @@ guidelines that keep the agent from asking what it could work out on its own.
 
 ```bash
 # from npm
-pi install npm:pi-ask-user
+pi install npm:pi-ask-user-questions
 
 # from git
 pi install git:github.com/qunm00/pi-ask-user-questions@v1
 
 # try it for one run without saving
-pi -e npm:pi-ask-user
+pi -e npm:pi-ask-user-questions
 ```
 
 Then in a session:
