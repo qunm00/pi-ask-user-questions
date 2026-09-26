@@ -259,8 +259,29 @@ The human gate below remains the only check for that.
 ### Step 2 — Implement the tool
 
 Schema, `executionMode: "sequential"`, the ask loop, skip/abort semantics, `details`,
-`promptSnippet` / `promptGuidelines`, and the `!hasUI` path. Register the `/ask-demo`
-command alongside it.
+`promptSnippet` / `promptGuidelines`, and the `!hasUI` path.
+
+#### Status: done — 18/18 tests pass, typecheck clean
+
+Two deviations from the design in §4.1, both forced by findings from the human gate
+rather than chosen:
+
+| Planned | Shipped | Why |
+|---|---|---|
+| `placeholder?: string` per question | **removed** | `ui.input`'s placeholder argument is a silent no-op in pi 0.87.1 — `ExtensionInputComponent` takes it as `_placeholder` and never reads it. Exposing a parameter that does nothing would be worse than not having it. |
+| `multiline?: boolean` opting into `ui.editor()` | **removed for v1** | `ui.editor()` accepts no `AbortSignal`. Aborting a turn while a multiline dialog is open leaves it waiting and the turn unable to finish. `ui.input` is abort-safe. Revisit only once that path is cancellable. |
+
+Consequence: the dialog title is the only channel that renders, so the counter, the
+question and the hint are all composed into it by `formatTitle()`. `ExtensionInputComponent`
+does render an untyped `opts.description`, but `ExtensionUIDialogOptions` only types
+`signal` and `timeout`, so using it would mean casting around the public type. Left alone
+deliberately.
+
+Tests in `__tests__/ask-user.test.ts` cover: registration, single answer, batch ordering
+with `Question n of m` titles, question+hint in the title, Escape skipping only that
+question, the no-fabricate instruction, empty re-prompt recorded when retyped, skip after a
+second blank, no re-prompt on Escape, whitespace-only treated as skip, and multi-line typed
+text preserved.
 
 ### Step 3 — Package manifest
 
@@ -276,6 +297,11 @@ Start a session in the project root. Confirm:
 - [ ] Multiple questions appear consecutively, titled `Question 1 of n`, `Question 2 of n`.
 - [ ] The agent does **not** ask for things it could determine itself.
 - [ ] The answer text reaches the model intact.
+
+**This is now the real Step 1 gate.** Everything so far exercised the dialog from a
+*command*, where the agent is idle. The original risk was a dialog rendering mid-turn from
+inside a tool's `execute()`, which only happens once a model actually calls the tool. Until
+this step passes, `ui.input()` mid-stream is still unverified.
 
 ### Step 5 — Edge cases
 

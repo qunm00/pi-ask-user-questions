@@ -38,7 +38,7 @@ describe("toolchain", () => {
 		expect(errors).toEqual([]);
 	});
 
-	it("registers ask_user once the tool lands (fails until Step 2)", async () => {
+	it("registers ask_user", async () => {
 		t = await createAskUserSession();
 		const names = (t.session.getAllTools?.() ?? []).map((tool: { name: string }) => tool.name);
 		expect(names).toContain("ask_user");
