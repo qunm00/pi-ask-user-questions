@@ -1,0 +1,42 @@
+{
+  "name": "pi-ask-user",
+  "version": "0.1.0",
+  "description": "Let the agent ask you a question and type your answer. No multiple choice. Batch questions are answered consecutively.",
+  "type": "module",
+  "license": "MIT",
+  "keywords": [
+    "pi-package",
+    "pi",
+    "pi-extension"
+  ],
+  "files": [
+    "extensions/**/*.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "pi": {
+    "extensions": [
+      "./extensions/ask-user.ts"
+    ]
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-agent-core": "*",
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-agent-core": "0.87.1",
+    "@earendil-works/pi-ai": "0.87.1",
+    "@earendil-works/pi-coding-agent": "0.87.1",
+    "@marcfargas/pi-test-harness": "0.6.1",
+    "@types/node": "^26.6.3",
+    "typebox": "^1.1.38",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.4"
+  }
+}

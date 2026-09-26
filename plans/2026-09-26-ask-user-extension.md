@@ -164,11 +164,17 @@ loading and publishing.
 ```
 pi-ask-user-questions/
 ├── package.json                     # name, keywords:["pi-package"], pi manifest, peerDeps
+├── tsconfig.json                    # strict, noEmit
+├── vitest.config.ts                 # pi-ai/compat alias + harness inlining
 ├── README.md                        # install + agent-facing usage rules
 ├── plans/
 │   └── 2026-09-26-ask-user-extension.md   # this file
 ├── extensions/
 │   └── ask-user.ts                  # the extension (single file, zero runtime deps)
+├── __tests__/
+│   ├── smoke.test.ts                # toolchain + extension loads cleanly
+│   ├── mock-ui.test.ts              # proves mockUI reaches a real extension tool
+│   └── support/pi-compat.ts         # the three pi 0.87 bridges
 └── .pi/
     ├── settings.json                # created by: pi install ./ --local
     ├── sessions/                    # existing
@@ -211,6 +217,44 @@ pi -e ./extensions/ask-user.ts
 - **Gate passes** → dialog renders mid-session. Continue to Step 2 as designed.
 - **Gate fails** → switch the primitive to `ui.editor()` and race it against `signal`
   manually, documenting that Escape is the only reliable dismissal. Then continue.
+
+#### Status: done, with three pi 0.87 compatibility breaks bridged
+
+Testing now runs on [`@marcfargas/pi-test-harness`](https://github.com/marcfargas/pi-test-harness)
+(v0.6.1) instead of a hand-rolled harness. It keeps pi real — real jiti loading,
+real `ExtensionRunner`, real hooks, real tool registry — and substitutes only
+`streamFn` (the model boundary) and `ctx.ui.*`. `mockUI` is exactly the
+substitution `ask_user` needs, so the harness tests the tool's real execution path.
+
+The harness targets pi 0.75.x; we run 0.87.1. Three breaks, all bridged in
+`__tests__/support/pi-compat.ts` and `vitest.config.ts` rather than by forking it:
+
+| # | Break | Symptom | Fix |
+|---|---|---|---|
+| 1 | `getModel` removed from `@earendil-works/pi-ai` | harness fails to import | alias to the documented `@earendil-works/pi-ai/compat` entrypoint, a strict superset (122 vs 68 exports) |
+| 2 | agent stream property renamed `streamFn` -> `streamFunction` | "Playbook not fully consumed", 0 actions consumed | accessor on the agent forwarding `streamFn` -> `streamFunction` |
+| 3 | `agent.setTools` removed; `state.tools` is re-derived at prompt time | `mockTools` silently not applied | **not bridged** — irrelevant to `ask_user`, which calls no built-in tools |
+
+Break 2 also required inlining the harness in `vitest.config.ts`: vitest externalizes
+`node_modules` deps and loads them with native ESM, which bypasses `resolve.alias`
+entirely, so the alias silently did nothing until the harness was inlined.
+
+Break 3 is the one caveat. `mockTools` does not work against 0.87, so a test cannot
+stub `bash`/`read`/`write`. It also means the harness's `verifySandboxInstall({ smoke })`
+is untested here; the non-smoke `verifySandboxInstall` path should still be usable.
+Extension-registered tools execute for real regardless, which is the mode `ask_user`
+wants.
+
+One API subtlety worth keeping: `mockUI: { input: undefined }` does **not** simulate
+Escape. An explicit `undefined` is indistinguishable from omitting the key, so the
+documented default `input -> ""` applies. Cancellation must be `input: () => undefined`.
+This matters because `ask_user`'s skip path is exactly `answer === undefined`.
+
+Current state: `npx tsc --noEmit` clean; 6 of 7 tests pass, the one failure being the
+intentional assertion that `ask_user` is registered — that is Step 2.
+
+The harness substitutes `ctx.ui.*`, so **it still cannot validate terminal rendering**.
+The human gate below remains the only check for that.
 
 ### Step 2 — Implement the tool
 
