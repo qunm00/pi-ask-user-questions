@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+*.tsbuildinfo
+
+# npm publish artifacts
+*.tgz
+
+# Pi local runtime state (machine-specific, must not be committed)
+#   .pi/settings.json -> `pi install --local` package declarations
+#   .pi/sessions/     -> session transcripts (private)
+#   .pi/state/        -> internal runtime state
+# Also matches the nested stray pi/.pi/ at any depth.
+.pi/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+
+# Tests / coverage
+coverage/
+.nyc_output/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
