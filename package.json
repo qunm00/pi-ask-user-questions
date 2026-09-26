@@ -21,7 +21,7 @@
   },
   "scripts": {
     "test": "vitest run",
-    "test:watch": "vitest",
+    "test:unit": "vitest run __tests__/ask-user.test.ts __tests__/mock-ui.test.ts __tests__/smoke.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
@@ -39,5 +39,13 @@
     "typebox": "^1.1.38",
     "typescript": "^5.8.3",
     "vitest": "^3.1.4"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+github.com/qunm00/pi-ask-user-questions.git"
+  },
+  "homepage": "https://github.com/qunm00/pi-ask-user-questions#readme",
+  "bugs": {
+    "url": "https://github.com/qunm00/pi-ask-user-questions/issues"
   }
 }
