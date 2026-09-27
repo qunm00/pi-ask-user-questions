@@ -87,6 +87,7 @@ jobs:
             const assert = require("node:assert");
             const fs = require("node:fs");
             const p = require("./package.json");
+
             assert(p.keywords.includes("pi-package"), "missing pi-package keyword");
             assert(
               Object.keys(p.dependencies ?? {}).length === 0,
@@ -95,5 +96,26 @@ jobs:
             for (const entry of p.pi.extensions) {
               fs.accessSync(entry.replace(/^\.\//, ""));
             }
+
+            // npm provenance verification compares package.json against the
+            // repository recorded in the sigstore attestation and rejects
+            // anything that is not the canonical HTTPS form. A "git+github.com
+            // /owner/repo.git", a trailing ".git", or a homepage carrying a
+            // "#readme" fragment each fail the publish with a 422 long after
+            // the build is already green, so catch them here instead.
+            const canonical = (url) =>
+              /^https:\/\/github\.com\/[^/]+\/[^/]+$/.test(url ?? "") &&
+              !url.endsWith(".git") &&
+              !url.includes("#");
+
+            assert(
+              canonical(p.repository?.url),
+              `repository.url must be https://github.com/owner/repo with no git+ prefix, .git suffix or fragment, got: ${p.repository?.url}`,
+            );
+            assert(
+              canonical(p.homepage),
+              `homepage must be https://github.com/owner/repo with no .git suffix or fragment, got: ${p.homepage}`,
+            );
+
             console.log("metadata ok");
           '

@@ -46,9 +46,9 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+github.com/qunm00/pi-ask-user-questions.git"
+		"url": "https://github.com/qunm00/pi-ask-user-questions"
 	},
-	"homepage": "https://github.com/qunm00/pi-ask-user-questions#readme",
+	"homepage": "https://github.com/qunm00/pi-ask-user-questions",
 	"bugs": {
 		"url": "https://github.com/qunm00/pi-ask-user-questions/issues"
 	},
