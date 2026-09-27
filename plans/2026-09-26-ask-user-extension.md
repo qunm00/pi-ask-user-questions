@@ -305,11 +305,41 @@ this step passes, `ui.input()` mid-stream is still unverified.
 
 ### Step 5 — Edge cases
 
-- [ ] Escape mid-batch → remaining questions still asked, skips reported.
-- [ ] Abort (Esc / ctrl+c) during a dialog → no hang, partial result returned.
-- [ ] 3+ questions in one call.
+- [x] Escape mid-batch → remaining questions still asked, skips reported.
+- [x] Abort during a dialog → no hang, partial result returned.
+- [x] 3+ questions in one call.
 - [ ] Agent makes 3 separate calls in one assistant message → serialized, never stacked.
-- [ ] Run in `print` / `json` mode → actionable message, no hang.
+- [x] Run without a UI → actionable message, no hang.
+
+#### Status: 4 of 5 covered; one structurally unreachable by the harness
+
+`__tests__/edge-cases.test.ts` (8 tests) calls the registered tool's `execute()` directly
+with a crafted context and signal, because the playbook cannot express these: it emits one
+tool call per assistant message and never aborts a turn mid-flight.
+
+Covered: signal already aborted (zero dialogs opened); abort mid-batch (stops asking);
+answers collected before an abort are kept; the abort signal is passed through to every
+dialog, without which a terminal abort could not dismiss an open one; the no-UI path
+returns an actionable message and opens nothing; single-question and 10-question batches;
+and the declared 1..10 batch contract with `question` required and `hint` optional.
+
+Two findings from writing these:
+
+- **The abort message was inaccurate.** It said "interrupted before N question(s) were
+  shown", but an aborted dialog may have been on screen, so that can be false. Now worded
+  around what is always true: "interrupted after N of M question(s)".
+- **Batch limits are not enforced in `execute`.** `minItems`/`maxItems` live in the TypeBox
+  schema, which Pi validates before `execute` runs, so calling `execute` directly bypasses
+  them. The test asserts the declared contract rather than claiming to test enforcement.
+
+Not covered: three separate `ask_user` calls in one assistant message. The playbook emits
+one tool call per message by design — the harness README lists this under its own known
+gaps. What *is* asserted is the mechanism that makes it safe: the tool is registered with
+`executionMode: "sequential"`. Confirming the visible behaviour needs a live session.
+
+Also still unverified: a real terminal abort (Esc / Ctrl+C) dismissing an open dialog. The
+abort propagation is unit-tested against a real `AbortSignal`, but only a terminal shows
+whether the TUI cleans up.
 
 ### Step 6 — README and publish path
 

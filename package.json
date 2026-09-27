@@ -21,7 +21,7 @@
   },
   "scripts": {
     "test": "vitest run",
-    "test:unit": "vitest run __tests__/ask-user.test.ts __tests__/mock-ui.test.ts __tests__/smoke.test.ts",
+    "test:unit": "vitest run __tests__/ask-user.test.ts __tests__/mock-ui.test.ts __tests__/smoke.test.ts __tests__/edge-cases.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {

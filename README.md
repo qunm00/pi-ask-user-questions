@@ -97,7 +97,7 @@ These are deliberate, not oversights:
 
 ```bash
 npm install
-npm test          # 19 tests, includes a real npm pack + install + load check
+npm test          # 27 tests, includes a real npm pack + install + load check
 npm run test:unit # skips the slow sandbox install check
 npm run typecheck # tsc --noEmit
 

@@ -138,11 +138,14 @@ function buildContent(details: AskDetails, requested: number): string {
 		);
 	}
 
-	const neverShown = requested - details.answers.length;
+	const unanswered = requested - details.answers.length;
 	if (details.aborted) {
+		// Wording is deliberately about *answered*, not *shown*. An aborted
+		// dialog may have been on screen, so claiming it was never shown could
+		// be false; "did not get answered" is always true.
 		lines.push(
-			`The turn was interrupted before ${neverShown} question(s) were shown. ` +
-				"Do not assume answers to questions that were never asked.",
+			`The turn was interrupted after ${details.answers.length} of ${requested} question(s). ` +
+				"Do not assume answers to the ${unanswered} that were not answered.",
 		);
 	}
 
