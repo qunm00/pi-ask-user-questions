@@ -10,26 +10,22 @@
  * be skipped for a fast inner loop: `npm run test:unit`.
  */
 
-import { describe, it, expect } from "vitest";
-import { verifySandboxInstall } from "@marcfargas/pi-test-harness";
 import { fileURLToPath } from "node:url";
+import { verifySandboxInstall } from "@marcfargas/pi-test-harness";
+import { describe, expect, it } from "vitest";
 
 const PACKAGE_DIR = fileURLToPath(new URL("..", import.meta.url));
 
 describe("package", () => {
-	it(
-		"packs, installs and loads with the ask_user tool available",
-		async () => {
-			const result = await verifySandboxInstall({
-				packageDir: PACKAGE_DIR,
-				expect: { extensions: 1, tools: ["ask_user"], skills: 0 },
-			});
+	it("packs, installs and loads with the ask_user tool available", async () => {
+		const result = await verifySandboxInstall({
+			packageDir: PACKAGE_DIR,
+			expect: { extensions: 1, tools: ["ask_user"], skills: 0 },
+		});
 
-			// The extension must load in a clean environment with no error.
-			expect(result.loaded.extensionErrors).toEqual([]);
-			expect(result.loaded.extensions).toBe(1);
-			expect(result.loaded.tools).toContain("ask_user");
-		},
-		300_000,
-	);
+		// The extension must load in a clean environment with no error.
+		expect(result.loaded.extensionErrors).toEqual([]);
+		expect(result.loaded.extensions).toBe(1);
+		expect(result.loaded.tools).toContain("ask_user");
+	}, 300_000);
 });

@@ -16,8 +16,8 @@
  *    only a terminal can confirm the TUI dismisses the dialog cleanly.
  */
 
-import { describe, it, expect, afterEach } from "vitest";
 import type { TestSession } from "@marcfargas/pi-test-harness";
+import { afterEach, describe, expect, it } from "vitest";
 import { createAskUserSession } from "./support/pi-compat";
 
 interface AskResult {
@@ -39,9 +39,7 @@ type ToolDef = {
 /** Load the real registered tool definition out of a live session. */
 async function loadTool(): Promise<{ t: TestSession; tool: ToolDef }> {
 	const t = await createAskUserSession();
-	const tool = (t.session as unknown as { getToolDefinition(name: string): ToolDef }).getToolDefinition(
-		"ask_user",
-	);
+	const tool = (t.session as unknown as { getToolDefinition(name: string): ToolDef }).getToolDefinition("ask_user");
 	return { t, tool };
 }
 
@@ -72,12 +70,25 @@ describe("ask_user edge cases", () => {
 			{ questions: [{ question: "Q1?" }, { question: "Q2?" }] },
 			controller.signal,
 			undefined,
-			fakeCtx({ ui: { input: async (title: string) => (dialogs.push(title), "x") } }),
+			fakeCtx({
+				ui: {
+					input: async (title: string) => {
+						dialogs.push(title);
+						return "x";
+					},
+				},
+			}),
 		);
 
 		expect(dialogs).toHaveLength(0);
 		expect(result.details.aborted).toBe(true);
 		expect(result.content[0].text).toContain("interrupted after 0 of 2");
+		// Assert the whole message, not just its first clause. A plain string
+		// where a template literal was meant once shipped the literal text
+		// "${unanswered}" to the model, and asserting only the first sentence
+		// let it through.
+		expect(result.content[0].text).toContain("Do not assume answers to the 2 that were not answered.");
+		expect(result.content[0].text).not.toContain("${");
 	});
 
 	it("stops asking further questions once aborted mid-batch", async () => {
@@ -109,6 +120,8 @@ describe("ask_user edge cases", () => {
 		expect(dialogs[0]).toContain("Q1?");
 		expect(result.details.aborted).toBe(true);
 		expect(result.content[0].text).toContain("interrupted after 0 of 3");
+		expect(result.content[0].text).toContain("Do not assume answers to the 3 that were not answered.");
+		expect(result.content[0].text).not.toContain("${");
 	});
 
 	it("keeps answers already collected before the abort", async () => {
@@ -139,6 +152,9 @@ describe("ask_user edge cases", () => {
 		expect(result.details.answers[0].skipped).toBe(false);
 		expect(result.details.aborted).toBe(true);
 		expect(result.content[0].text).toContain("A1: first answer");
+		expect(result.content[0].text).toContain("interrupted after 1 of 2");
+		expect(result.content[0].text).toContain("Do not assume answers to the 1 that were not answered.");
+		expect(result.content[0].text).not.toContain("${");
 	});
 
 	it("passes the abort signal through to each dialog", async () => {

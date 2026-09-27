@@ -1,0 +1,40 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+# npm trusted publishing: no NPM_TOKEN secret in repo settings, and consumers
+# get verifiable provenance on the package. Configure the trusted publisher on
+# npmjs.com for this repo + workflow filename before the first release.
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          registry-url: https://registry.npmjs.org
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+
+      # Prevents the drift this repo already hit once: the README advertised
+      # git:...@v1 while package.json said 0.1.0. Tag and manifest must agree.
+      - name: Tag must match the manifest version
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          VER="$(node -p "require('./package.json').version")"
+          if [ "$TAG" != "$VER" ]; then
+            echo "::error::tag $TAG does not match package.json version $VER"
+            exit 1
+          fi
+          echo "releasing $VER"
+
+      - run: npm publish --provenance --access public

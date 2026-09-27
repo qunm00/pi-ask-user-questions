@@ -11,8 +11,8 @@
  * from omitting the key, so the documented default `input -> ""` applies.
  */
 
-import { describe, it, expect, afterEach } from "vitest";
-import { when, calls, says, type TestSession } from "@marcfargas/pi-test-harness";
+import { calls, says, type TestSession, when } from "@marcfargas/pi-test-harness";
+import { afterEach, describe, expect, it } from "vitest";
 import { createAskUserSession } from "./support/pi-compat";
 
 /** Runs one turn where the model calls ask_user, and returns the session. */
@@ -21,9 +21,7 @@ async function ask(
 	input: (title: string) => string | undefined,
 ): Promise<TestSession> {
 	const t = await createAskUserSession({ mockUI: { input } } as never);
-	await t.run(
-		when("I need some input from you", [calls("ask_user", { questions }), says("Thanks.")]),
-	);
+	await t.run(when("I need some input from you", [calls("ask_user", { questions }), says("Thanks.")]));
 	return t;
 }
 
@@ -59,11 +57,7 @@ describe("ask_user", () => {
 	it("asks a batch consecutively, in order", async () => {
 		const titles: string[] = [];
 		t = await ask(
-			[
-				{ question: "What should I call you?" },
-				{ question: "What are we working on?" },
-				{ question: "Any deadline?" },
-			],
+			[{ question: "What should I call you?" }, { question: "What are we working on?" }, { question: "Any deadline?" }],
 			(title) => {
 				titles.push(title);
 				return `answer ${titles.length}`;
@@ -83,10 +77,7 @@ describe("ask_user", () => {
 	});
 
 	it("shows the question text and the hint in the title", async () => {
-		t = await ask(
-			[{ question: "What should I call you?", hint: "used in the greeting" }],
-			() => "Alice",
-		);
+		t = await ask([{ question: "What should I call you?", hint: "used in the greeting" }], () => "Alice");
 
 		const title = t.events.uiCallsFor("input")[0].args[0] as string;
 		expect(title).toContain("What should I call you?");
@@ -95,17 +86,11 @@ describe("ask_user", () => {
 
 	it("Escape skips only that question and continues the batch", async () => {
 		const titles: string[] = [];
-		t = await ask(
-			[
-				{ question: "First question?" },
-				{ question: "Second question?" },
-			],
-			(title) => {
-				titles.push(title);
-				// Skip the first, answer the second.
-				return title.includes("First") ? undefined : "answered anyway";
-			},
-		);
+		t = await ask([{ question: "First question?" }, { question: "Second question?" }], (title) => {
+			titles.push(title);
+			// Skip the first, answer the second.
+			return title.includes("First") ? undefined : "answered anyway";
+		});
 
 		expect(titles).toHaveLength(2);
 		const text = t.events.toolResultsFor("ask_user")[0].text;
@@ -122,10 +107,7 @@ describe("ask_user", () => {
 	});
 
 	it("re-prompts once on an empty answer, then records it if retyped", async () => {
-		t = await ask(
-			[{ question: "Name?" }],
-			(title) => (title.includes("empty, Escape to skip") ? "retyped" : ""),
-		);
+		t = await ask([{ question: "Name?" }], (title) => (title.includes("empty, Escape to skip") ? "retyped" : ""));
 
 		expect(t.events.uiCallsFor("input")).toHaveLength(2);
 		const text = t.events.toolResultsFor("ask_user")[0].text;

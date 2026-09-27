@@ -97,9 +97,12 @@ These are deliberate, not oversights:
 
 ```bash
 npm install
-npm test          # 27 tests, includes a real npm pack + install + load check
-npm run test:unit # skips the slow sandbox install check
-npm run typecheck # tsc --noEmit
+npm run verify      # lint + typecheck + all 27 tests
+npm test            # 27 tests, includes a real npm pack + install + load check
+npm run test:unit   # skips the slow sandbox install check
+npm run lint        # biome
+npm run lint:fix    # biome --write
+npm run typecheck   # tsc --noEmit
 
 # load it into a live pi without installing
 pi -e ./extensions/ask-user.ts
@@ -121,6 +124,36 @@ one. Remove those shims once a harness release supports 0.87.
 
 Because the harness substitutes `ctx.ui.*`, **no automated test can check terminal
 rendering**. `/ask-demo` is the manual gate for that.
+
+Linting is [Biome](https://biomejs.dev) for formatting and non-type-aware rules. It does
+not replace `tsc`: Biome has no type information, so `npm run typecheck` is a separate and
+non-redundant gate.
+
+## Continuous integration
+
+`.github/workflows/` has two workflows:
+
+- **`ci.yml`** — lint, typecheck and test on Node 22.19 and 24, plus two package-specific
+  jobs: one asserts the published tarball is exactly `LICENSE`, `README.md`,
+  `extensions/ask-user.ts` and `package.json`, the other asserts the pi package metadata
+  (`pi-package` keyword, resolvable `pi.extensions` paths, no runtime dependencies).
+  A weekly job re-runs the suite against `pi@latest` to catch the compat shims breaking
+  before a user does.
+- **`release.yml`** — on a `v*` tag, verifies the tag matches the `package.json` version,
+  then publishes with `npm publish --provenance` using npm trusted publishing (OIDC), so
+  there is no long-lived `NPM_TOKEN` in repository settings.
+
+Releasing:
+
+```bash
+npm version 0.1.0        # updates package.json
+git tag -a v0.1.0 -m "Initial release"
+git push origin main --follow-tags
+```
+
+The tag must match the manifest version; the release workflow fails if it does not.
+
+Requires Node >= 22.19.0, which is pi's own floor.
 
 ## License
 

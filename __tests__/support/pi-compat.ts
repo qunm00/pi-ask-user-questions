@@ -29,8 +29,8 @@
  * and re-verify it whenever pi is upgraded.
  */
 
-import { createTestSession, type TestSession } from "@marcfargas/pi-test-harness";
 import { fileURLToPath } from "node:url";
+import { createTestSession, type TestSession } from "@marcfargas/pi-test-harness";
 
 export const EXTENSION = fileURLToPath(new URL("../../extensions/ask-user.ts", import.meta.url));
 
@@ -67,9 +67,7 @@ export function bridgeStreamFn(agent: unknown): void {
  * and irrelevant to ask_user, which calls no built-in tools. See the
  * module comment above.
  */
-export async function createSession(
-	options: Parameters<typeof createTestSession>[0] = {},
-): Promise<TestSession> {
+export async function createSession(options: Parameters<typeof createTestSession>[0] = {}): Promise<TestSession> {
 	const session = await createTestSession(options);
 	bridgeStreamFn((session.session as unknown as { agent: unknown }).agent);
 	return session;

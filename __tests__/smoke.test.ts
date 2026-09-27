@@ -11,8 +11,8 @@
  * /ask-demo) remains the only check for that.
  */
 
-import { describe, it, expect, afterEach } from "vitest";
-import { when, calls, says, type TestSession } from "@marcfargas/pi-test-harness";
+import { says, type TestSession, when } from "@marcfargas/pi-test-harness";
+import { afterEach, describe, expect, it } from "vitest";
 import { createAskUserSession } from "./support/pi-compat";
 
 describe("toolchain", () => {

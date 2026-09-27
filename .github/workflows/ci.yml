@@ -1,0 +1,99 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  # Mondays: catch upstream pi breakage before a user hits it. The compat
+  # shims in __tests__/support/pi-compat.ts bridge pi 0.75 -> 0.87, and they
+  # are the first thing to break when a new pi release renames something.
+  schedule:
+    - cron: "17 4 * * 1"
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # pi-coding-agent requires node >= 22.19.0, so 22.19 is a real floor
+        # rather than a round number.
+        node: ["22.19.0", "24"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "${{ matrix.node }}"
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+
+  # The pi-0.87 compat shims are a compatibility layer against a moving
+  # target. This job fails early when the next pi release moves an API again,
+  # instead of waiting for a user report.
+  pi-latest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - run: npm ci
+      - name: Install the newest pi packages
+        run: |
+          npm install --no-save \
+            @earendil-works/pi-ai@latest \
+            @earendil-works/pi-agent-core@latest \
+            @earendil-works/pi-coding-agent@latest
+      - name: Show which versions are under test
+        run: |
+          npm ls @earendil-works/pi-coding-agent @earendil-works/pi-ai --depth=0 || true
+      - run: npm run typecheck
+      - run: npm test
+
+  package-integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - run: npm ci
+      - name: Assert the published tarball is minimal
+        run: |
+          npm pack --dry-run --json > pack.json
+          node -e '
+            const files = require("./pack.json")[0].files.map((f) => f.path).sort();
+            const expected = [
+              "LICENSE",
+              "README.md",
+              "extensions/ask-user.ts",
+              "package.json",
+            ].sort();
+            if (JSON.stringify(files) !== JSON.stringify(expected)) {
+              console.error("Unexpected tarball contents:", files);
+              process.exit(1);
+            }
+            console.log("tarball ok:", files.join(", "));
+          '
+      - name: Assert pi package metadata
+        run: |
+          node -e '
+            const assert = require("node:assert");
+            const fs = require("node:fs");
+            const p = require("./package.json");
+            assert(p.keywords.includes("pi-package"), "missing pi-package keyword");
+            assert(
+              Object.keys(p.dependencies ?? {}).length === 0,
+              "runtime dependencies must stay empty; pi supplies its own packages",
+            );
+            for (const entry of p.pi.extensions) {
+              fs.accessSync(entry.replace(/^\.\//, ""));
+            }
+            console.log("metadata ok");
+          '

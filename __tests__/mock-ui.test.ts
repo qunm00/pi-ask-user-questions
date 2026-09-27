@@ -14,11 +14,11 @@
  * passes before ask_user (Step 2) exists.
  */
 
-import { describe, it, expect, afterEach } from "vitest";
-import { when, calls, says, type TestSession, type TestSessionOptions } from "@marcfargas/pi-test-harness";
-import { createSession } from "./support/pi-compat";
-import { Type } from "typebox";
 import { defineTool, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { calls, says, type TestSession, type TestSessionOptions, when } from "@marcfargas/pi-test-harness";
+import { Type } from "typebox";
+import { afterEach, describe, expect, it } from "vitest";
+import { createSession } from "./support/pi-compat";
 
 const probeTool = defineTool({
 	name: "ui_probe",
@@ -48,12 +48,7 @@ describe("mockUI interception", () => {
 			mockUI: { input: "the typed answer" },
 		} as TestSessionOptions);
 
-		await t.run(
-			when("Ask me something", [
-				calls("ui_probe", { label: "alpha" }),
-				says("Got it."),
-			]),
-		);
+		await t.run(when("Ask me something", [calls("ui_probe", { label: "alpha" }), says("Got it.")]));
 
 		// The tool ran for real and received the mocked answer.
 		const result = t.events.toolResultsFor("ui_probe")[0];
@@ -74,12 +69,7 @@ describe("mockUI interception", () => {
 			mockUI: { input: (title: string) => (title.includes("alpha") ? "dynamic answer" : undefined) },
 		} as TestSessionOptions);
 
-		await t.run(
-			when("Ask about alpha", [
-				calls("ui_probe", { label: "alpha" }),
-				says("Done."),
-			]),
-		);
+		await t.run(when("Ask about alpha", [calls("ui_probe", { label: "alpha" }), says("Done.")]));
 
 		expect(t.events.toolResultsFor("ui_probe")[0].text).toContain("dynamic answer");
 	});
@@ -99,12 +89,7 @@ describe("mockUI interception", () => {
 			mockUI: { input: () => undefined },
 		} as TestSessionOptions);
 
-		await t.run(
-			when("Ask and let me cancel", [
-				calls("ui_probe", { label: "beta" }),
-				says("Skipped."),
-			]),
-		);
+		await t.run(when("Ask and let me cancel", [calls("ui_probe", { label: "beta" }), says("Skipped.")]));
 
 		expect(t.events.toolResultsFor("ui_probe")[0].text).toContain("<cancelled>");
 		expect(t.events.uiCallsFor("input")[0].returnValue).toBeUndefined();
@@ -113,12 +98,7 @@ describe("mockUI interception", () => {
 	it("defaults to an empty string when input is omitted entirely", async () => {
 		t = await createSession({ extensionFactories: [probeExtension] } as TestSessionOptions);
 
-		await t.run(
-			when("Ask with no mock configured", [
-				calls("ui_probe", { label: "gamma" }),
-				says("Done."),
-			]),
-		);
+		await t.run(when("Ask with no mock configured", [calls("ui_probe", { label: "gamma" }), says("Done.")]));
 
 		// Documented default: input -> "". Confirms the distinction above.
 		expect(t.events.toolResultsFor("ui_probe")[0].text).toContain("answer=");

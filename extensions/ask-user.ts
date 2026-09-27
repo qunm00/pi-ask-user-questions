@@ -30,8 +30,8 @@
  *    never invent an answer.
  */
 
-import { Type } from "typebox";
 import { defineTool, type ExtensionAPI, type ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { Type } from "typebox";
 
 interface AskQuestion {
 	question: string;
@@ -92,11 +92,9 @@ async function askQuestions(
 		// An accidental Enter is likelier than a deliberate blank answer, so
 		// confirm once before recording it as a skip. Escape skips immediately.
 		if (answer !== undefined && answer.trim() === "") {
-			answer = await ctx.ui.input(
-				formatTitle(index, questions.length, question, "empty, Escape to skip"),
-				undefined,
-				{ signal },
-			);
+			answer = await ctx.ui.input(formatTitle(index, questions.length, question, "empty, Escape to skip"), undefined, {
+				signal,
+			});
 			if (signal?.aborted) {
 				aborted = true;
 				break;
@@ -145,7 +143,7 @@ function buildContent(details: AskDetails, requested: number): string {
 		// be false; "did not get answered" is always true.
 		lines.push(
 			`The turn was interrupted after ${details.answers.length} of ${requested} question(s). ` +
-				"Do not assume answers to the ${unanswered} that were not answered.",
+				`Do not assume answers to the ${unanswered} that were not answered.`,
 		);
 	}
 

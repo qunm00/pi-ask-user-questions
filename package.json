@@ -1,51 +1,58 @@
 {
-  "name": "pi-ask-user-questions",
-  "version": "0.1.0",
-  "description": "Let the agent ask you a question and type your answer. No multiple choice. Batch questions are answered consecutively.",
-  "type": "module",
-  "license": "MIT",
-  "keywords": [
-    "pi-package",
-    "pi",
-    "pi-extension"
-  ],
-  "files": [
-    "extensions/**/*.ts",
-    "README.md",
-    "LICENSE"
-  ],
-  "pi": {
-    "extensions": [
-      "./extensions/ask-user.ts"
-    ]
-  },
-  "scripts": {
-    "test": "vitest run",
-    "test:unit": "vitest run __tests__/ask-user.test.ts __tests__/mock-ui.test.ts __tests__/smoke.test.ts __tests__/edge-cases.test.ts",
-    "typecheck": "tsc --noEmit"
-  },
-  "peerDependencies": {
-    "@earendil-works/pi-agent-core": "*",
-    "@earendil-works/pi-ai": "*",
-    "@earendil-works/pi-coding-agent": "*",
-    "typebox": "*"
-  },
-  "devDependencies": {
-    "@earendil-works/pi-agent-core": "0.87.1",
-    "@earendil-works/pi-ai": "0.87.1",
-    "@earendil-works/pi-coding-agent": "0.87.1",
-    "@marcfargas/pi-test-harness": "0.6.1",
-    "@types/node": "^26.6.3",
-    "typebox": "^1.1.38",
-    "typescript": "^5.8.3",
-    "vitest": "^3.1.4"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+github.com/qunm00/pi-ask-user-questions.git"
-  },
-  "homepage": "https://github.com/qunm00/pi-ask-user-questions#readme",
-  "bugs": {
-    "url": "https://github.com/qunm00/pi-ask-user-questions/issues"
-  }
+	"name": "pi-ask-user-questions",
+	"version": "0.1.0",
+	"description": "Let the agent ask you a question and type your answer. No multiple choice. Batch questions are answered consecutively.",
+	"type": "module",
+	"license": "MIT",
+	"keywords": [
+		"pi-package",
+		"pi",
+		"pi-extension"
+	],
+	"files": [
+		"extensions/**/*.ts",
+		"README.md",
+		"LICENSE"
+	],
+	"pi": {
+		"extensions": [
+			"./extensions/ask-user.ts"
+		]
+	},
+	"scripts": {
+		"lint": "biome check .",
+		"lint:fix": "biome check --write .",
+		"typecheck": "tsc --noEmit",
+		"test": "vitest run",
+		"test:unit": "vitest run __tests__/ask-user.test.ts __tests__/mock-ui.test.ts __tests__/smoke.test.ts __tests__/edge-cases.test.ts",
+		"verify": "npm run lint && npm run typecheck && npm test"
+	},
+	"peerDependencies": {
+		"@earendil-works/pi-agent-core": "*",
+		"@earendil-works/pi-ai": "*",
+		"@earendil-works/pi-coding-agent": "*",
+		"typebox": "*"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.5.14",
+		"@earendil-works/pi-agent-core": "0.87.1",
+		"@earendil-works/pi-ai": "0.87.1",
+		"@earendil-works/pi-coding-agent": "0.87.1",
+		"@marcfargas/pi-test-harness": "0.6.1",
+		"@types/node": "^26.6.3",
+		"typebox": "^1.1.38",
+		"typescript": "^5.8.3",
+		"vitest": "^3.1.4"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+github.com/qunm00/pi-ask-user-questions.git"
+	},
+	"homepage": "https://github.com/qunm00/pi-ask-user-questions#readme",
+	"bugs": {
+		"url": "https://github.com/qunm00/pi-ask-user-questions/issues"
+	},
+	"engines": {
+		"node": ">=22.19.0"
+	}
 }
