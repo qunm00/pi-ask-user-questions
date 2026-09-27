@@ -129,6 +129,11 @@ Linting is [Biome](https://biomejs.dev) for formatting and non-type-aware rules.
 not replace `tsc`: Biome has no type information, so `npm run typecheck` is a separate and
 non-redundant gate.
 
+## Requirements
+
+Node >= 22.19.0, which is pi's own floor. Staged publishing additionally needs npm 12+
+(the release workflow pins it).
+
 ## Continuous integration
 
 `.github/workflows/` has two workflows:
@@ -139,9 +144,32 @@ non-redundant gate.
   (`pi-package` keyword, resolvable `pi.extensions` paths, no runtime dependencies).
   A weekly job re-runs the suite against `pi@latest` to catch the compat shims breaking
   before a user does.
-- **`release.yml`** — on a `v*` tag, verifies the tag matches the `package.json` version,
-  then publishes with `npm publish --provenance` using npm trusted publishing (OIDC), so
-  there is no long-lived `NPM_TOKEN` in repository settings.
+- **`release.yml`** — on a `v*` tag, verifies the tag matches the `package.json` version, then
+  **stages** the package with `npm stage publish` rather than publishing it. Staging uploads
+  the tarball to the registry in a non-public state and does not prompt for 2FA, which is
+  what makes it usable from an automated workflow. Nothing becomes installable until a
+  maintainer approves it with 2FA:
+
+  ```bash
+  npm stage list                     # see what is pending
+  npm stage download <stage-id>      # optional: inspect the tarball first
+  npm stage approve <stage-id>       # requires 2FA, makes it public
+  ```
+
+  This uses npm trusted publishing (OIDC), so there is no long-lived `NPM_TOKEN` in
+  repository settings. Set up the trust relationship to grant **stage** publish:
+
+  ```bash
+  npm trust github \
+    --file release.yml \
+    --repo qunm00/pi-ask-user-questions \
+    --allow-stage-publish
+  ```
+
+  Two constraints worth knowing: the dist-tag is fixed at stage time and is immutable, and
+  short-lived tokens from a trust relationship can only run `npm stage publish` and
+  `npm publish` — which is why approval has to be a human step. The workflow pins npm 12+,
+  since staged publishing is not present in older npm.
 
 Releasing:
 
@@ -149,11 +177,11 @@ Releasing:
 npm version 0.1.0        # updates package.json
 git tag -a v0.1.0 -m "Initial release"
 git push origin main --follow-tags
+# CI stages it; then approve:
+npm stage list && npm stage approve <stage-id>
 ```
 
 The tag must match the manifest version; the release workflow fails if it does not.
-
-Requires Node >= 22.19.0, which is pi's own floor.
 
 ## License
 

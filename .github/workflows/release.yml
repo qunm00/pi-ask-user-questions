@@ -1,18 +1,41 @@
-name: Release
+name: Release (staged)
+
+# Stages the package instead of publishing it directly.
+#
+# `npm stage publish` uploads the tarball to the registry in a
+# non-public state and does NOT prompt for 2FA, which is what makes it
+# usable from an automated workflow. Nothing becomes installable until a
+# maintainer approves it with 2FA:
+#
+#   npm stage list
+#   npm stage download <stage-id>    # optional: inspect before approving
+#   npm stage approve <stage-id>     # requires 2FA, makes it public
+#
+# The dist-tag is fixed at stage time and is immutable, so it is set
+# explicitly here rather than left to the default.
+#
+# Trust setup must grant STAGE publish, not publish:
+#
+#   npm trust github \
+#     --file release.yml \
+#     --repo qunm00/pi-ask-user-questions \
+#     --allow-stage-publish
+#
+# Note: short-lived tokens minted by a trust relationship can only run
+# `npm stage publish` and `npm publish`. They cannot run other `npm stage`
+# subcommands, which is why approval is a human step with 2FA.
 
 on:
   push:
     tags: ["v*"]
 
-# npm trusted publishing: no NPM_TOKEN secret in repo settings, and consumers
-# get verifiable provenance on the package. Configure the trusted publisher on
-# npmjs.com for this repo + workflow filename before the first release.
 permissions:
   contents: read
   id-token: write
 
 jobs:
-  publish:
+  stage:
+    name: Stage for publishing
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,12 +44,21 @@ jobs:
           node-version: "24"
           registry-url: https://registry.npmjs.org
       - run: npm ci
+
+      # Staged publishing needs npm 12+. Runners bundle varying npm versions,
+      # so pin rather than hope. This runs last so `npm ci` above still uses
+      # the runner's own npm, which is known to handle the lockfile.
+      - name: Pin npm for staged publishing
+        run: |
+          npm install -g npm@^12
+          npm --version
+
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
 
       # Prevents the drift this repo already hit once: the README advertised
-      # git:...@v1 while package.json said 0.1.0. Tag and manifest must agree.
+      # git:...@v1 while package.json said 0.1.0.
       - name: Tag must match the manifest version
         run: |
           TAG="${GITHUB_REF_NAME#v}"
@@ -35,6 +67,33 @@ jobs:
             echo "::error::tag $TAG does not match package.json version $VER"
             exit 1
           fi
-          echo "releasing $VER"
+          echo "staging $VER"
 
-      - run: npm publish --provenance --access public
+      - name: Stage the package
+        id: stage
+        run: |
+          set -o pipefail
+          npm stage publish --provenance --access public --tag latest --json > stage.json
+          cat stage.json
+
+      # The stage id is what a maintainer needs in order to approve, so put
+      # it somewhere obvious rather than buried in the log.
+      - name: Report the stage id
+        if: always()
+        run: |
+          {
+            echo "### Staged for publishing"
+            echo
+            echo "This package is **not** installable yet. Approve it with 2FA:"
+            echo
+            echo '```bash'
+            echo "npm stage list"
+            echo "npm stage approve <stage-id>"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ -f stage.json ]; then
+            STAGE_ID="$(node -p "require('./stage.json').stageId || ''" 2>/dev/null || true)"
+            if [ -n "$STAGE_ID" ]; then
+              echo "Stage id: \`$STAGE_ID\`" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          fi
