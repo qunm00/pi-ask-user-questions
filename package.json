@@ -1,6 +1,6 @@
 {
 	"name": "pi-ask-user-questions",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "Let the agent ask you a question and type your answer. No multiple choice. Batch questions are answered consecutively.",
 	"type": "module",
 	"license": "MIT",

@@ -52,7 +52,7 @@ The exact guidelines, verbatim:
 pi install npm:pi-ask-user-questions
 
 # from git
-pi install git:github.com/qunm00/pi-ask-user-questions@v0.1.0
+pi install git:github.com/qunm00/pi-ask-user-questions@v0.1.1
 
 # try it for one run without saving
 pi -e npm:pi-ask-user-questions
